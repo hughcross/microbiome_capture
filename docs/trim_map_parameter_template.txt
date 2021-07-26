@@ -1,0 +1,35 @@
+#variables
+#name of the reference file
+reffile=genome.fa 	
+#directory with the reference file
+refdir=/nesi/project/uoo02327/catherine/references/
+#directory with the raw fastq 
+datadir=/nesi/project/uoo02328/meriam/pathogen_data/MiSeq_data_OG6819/data/untrimmed_data
+#suffix pattern of the first fastq file
+fq1=_R1_001.fastq.gz
+#suffix pattern of the second fastq file  
+fq2=_R2_001.fastq.gz
+#fastq files zipped? yes or no
+zipped_fastqs=yes
+#list of samples (separated by spaces, with no quotes around them)
+samplist=6819-01 6819-05 6819-07
+# additional options
+# trimmed data main folder
+trim_dir=/nesi/project/uoo02328/hugh/ancMicrobiome/trial_initial_processing
+# trimmed datafile suffix
+trim_folder_suffix=_trimmed
+# target data file
+target_data=collapsed.gz
+# mapping folder 
+map_dir=/nesi/project/uoo02328/hugh/ancMicrobiome/trial_initial_processing/mapping
+# bwa-specific option for seed length (-l)
+seedlength=16
+# bwa-specific option for error rate (-n)
+error_rate=0.02
+# bwa-specific option for gap opens (-o)
+gapopens=1
+# threads for bwa (-t) and samtools (-@)
+num_threads=8
+# if following option yes, then will run mapDamage on final bam file
+mapdamage=no
+#
