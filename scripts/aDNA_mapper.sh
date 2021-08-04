@@ -132,13 +132,14 @@ samtools view -@ $threads -b -S -q 20 ${samp}.sam > ${samp}.bam
 
 if [[ "$dedup" = 'yes' ]]; then
 echo 'DeDup will be used for deduplication'
+samtools sort -@ $threads ${samp}.bam -o ${samp}_sort.bam
 
 java -Xmx16G -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar \
-  --input ${samp}.bam \
+  --input ${samp}_sort.bam \
   --merged \
   --output $PWD
 # remove unmapped reads
-samtools view -@ $threads -b -F 0x0004 ${samp}_rmdup.bam.bam -o ${samp}_maponly.bam
+samtools view -@ $threads -b -F 0x0004 ${samp}_sort_rmdup.bam -o ${samp}_maponly.bam
 
 else
 echo 'Samtools will be used for deduplication'
