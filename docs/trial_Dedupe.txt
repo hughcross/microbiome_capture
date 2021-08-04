@@ -1,0 +1,85 @@
+
+cd /nesi/nobackup/uoo02328/hugh/trial_dedup
+
+BAMDIR='/nesi/nobackup/uoo02328/meriam/TB_capture/TB_mapping_results/intermediate_files/'
+
+module load Java/15.0.2
+
+java -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar -h
+
+java -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar \
+  --input ${BAMDIR}6949-13_possort.bam \
+  --merged \
+  --output /nesi/nobackup/uoo02328/hugh/trial_dedup
+
+Duplication Rate: 0.96
+
+module load SAMtools
+
+samtools flagstat ${BAMDIR}6949-13_possort.bam
+1229009
+samtools flagstat 6949-13_possort_rmdup.bam
+50300
+
+samtools flagstat ${BAMDIR}6949-13_remdup.bam
+18994
+
+num_reads=$(samtools flagstat ${BAMDIR}6949-13_possort.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+
+echo -e total reads:\\t ${num_reads}
+
+samtools sort -@ 8 ${BAMDIR}6949-01.bam -o 6949-01_sort.bam
+
+java -Xmx16G -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar \
+  --input 6949-01_sort.bam \
+  --merged \
+  --output /nesi/nobackup/uoo02328/hugh/trial_dedup/sample_01
+
+-Xmx16G
+
+samtools flagstat ${BAMDIR}6949-01_markdup.bam  
+samtools flagstat sample_01/6949-01_sort_rmdup.bam
+
+6949-01 6949-02
+6949-03 6949-06 6949-07 6949-08 6949-09 6949-10 6949-11
+for sample in 6949-03 6949-06 6949-07 6949-08 6949-09 6949-10 6949-11;
+do
+mkdir ${sample}_output
+cd ${sample}_output
+samtools sort -@ 8 ${BAMDIR}${sample}.bam -o ${sample}.bam
+java -Xmx16G -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar \
+  --input ${sample}.bam \
+  --merged \
+  --output /nesi/nobackup/uoo02328/hugh/trial_dedup/${sample}_output
+total_reads=$(samtools flagstat ${sample}.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+dedupes=$(samtools flagstat ${sample}_rmdup.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+sam_dupes=$(samtools flagstat ${BAMDIR}${sample}_markdup.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+echo ${sample} >> ../dedupe_comparison.txt
+echo -e total reads:\\t ${total_reads} >> ../dedupe_comparison.txt
+echo -e samtools dedup:\\t ${sam_dupes} >> ../dedupe_comparison.txt
+echo -e DeDup dedup:\\t ${dedupes} >> ../dedupe_comparison.txt
+cd ../
+done
+
+# with possort
+6949-03 6949-04 6949-07 6949-09 6949-13 6949-14 6949-15 MS11106 MS11107-1
+
+for sample in 6949-01 6949-02 6949-03 6949-04 6949-07 6949-09 6949-13 6949-14 6949-15 MS11106 MS11107-1;
+do
+mkdir ${sample}_output2
+cd ${sample}_output2
+java -Xmx16G -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar \
+  --input ${BAMDIR}${sample}_possort.bam \
+  --merged \
+  --output /nesi/nobackup/uoo02328/hugh/trial_dedup/${sample}_output2
+total_reads=$(samtools flagstat ${BAMDIR}${sample}_possort.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+dedupes=$(samtools flagstat ${sample}_possort_rmdup.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+sam_dupes=$(samtools flagstat ${BAMDIR}${sample}_remdup.bam | grep '+ 0 mapped (100.00% : N/A)' | cut -f 1 -d ' ')
+echo ${sample} >> ../dedupe_comparison2.txt
+echo -e total reads:\\t ${total_reads} >> ../dedupe_comparison2.txt
+echo -e samtools dedup:\\t ${sam_dupes} >> ../dedupe_comparison2.txt
+echo -e DeDup dedup:\\t ${dedupes} >> ../dedupe_comparison2.txt
+cd ../
+done
+
+

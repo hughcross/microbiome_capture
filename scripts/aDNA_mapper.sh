@@ -31,6 +31,8 @@ gapopens=$(grep -v '#' $1 | grep 'gapopens' | cut -f 2 -d '=')
 num_threads=$(grep -v '#' $1 | grep 'num_threads' | cut -f 2 -d '=')
 # check if will run mapdamage
 mapdamage=$(grep -v '#' $1 | grep 'mapdamage' | cut -f 2 -d '=')
+# use DeDup to do deduplication
+dedup=$(grep -v '#' $1 | grep 'dedup' | cut -f 2 -d '=')
 
 # ref file 
 ref=$refdir$reffile
@@ -69,6 +71,7 @@ echo 'variables read, proceeding'
 
 module load BWA/0.7.17-gimkl-2017a
 module load SAMtools/1.12-GCC-9.2.0
+module load Java/15.0.2
 #module load GATK/4.1.4.1-gimkl-2018b
 #module load picard/2.21.8-Java-11.0.4
 module load mapDamage
@@ -127,13 +130,27 @@ echo "$samp $collapsedtotal" >> total_reads.txt
 #output the alignments as bam, ignoring alignment with quality score lower than 20
 samtools view -@ $threads -b -S -q 20 ${samp}.sam > ${samp}.bam
 
+if [[ "$dedup" = 'yes' ]]; then
+echo 'DeDup will be used for deduplication'
+
+java -Xmx16G -jar /nesi/project/uoo02328/programs/dedup/DeDup-0.12.8.jar \
+  --input ${samp}.bam \
+  --merged \
+  --output $PWD
+# remove unmapped reads
+samtools view -@ $threads -b -F 0x0004 ${samp}_rmdup.bam.bam -o ${samp}_maponly.bam
+
+else
+echo 'Samtools will be used for deduplication'
 # add ms/MC tags and sorting as pipe
 
 samtools sort -@ $threads -n ${samp}.bam | samtools fixmate -@ $threads -m - ${samp}_fixmate.bam
 
 samtools sort -@ $threads ${samp}_fixmate.bam | samtools markdup -@ $threads -r - ${samp}_markdup.bam
-
+# remove unmapped reads
 samtools view -@ $threads -b -F 0x0004 ${samp}_markdup.bam -o ${samp}_maponly.bam
+
+fi
 
 samtools index ${samp}_maponly.bam
 
